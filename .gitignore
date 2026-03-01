@@ -482,3 +482,11 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Docker & Containers
+.dockerignore
+rabbitmq_data/
+temp-data/
+
+# Environment secrets (CloudAMQP URLs, etc.)
+.env
