@@ -24,18 +24,11 @@ public static class DependencyInjection
 
             x.UsingRabbitMq((context, cfg) =>
             {
-                if (!string.IsNullOrWhiteSpace(rabbitSettings.ConnectionString))
+                cfg.Host(rabbitSettings.Host, rabbitSettings.VirtualHost, h =>
                 {
-                    cfg.Host(new Uri(rabbitSettings.ConnectionString));
-                }
-                else
-                {
-                    cfg.Host(rabbitSettings.Host, rabbitSettings.VirtualHost, h =>
-                    {
-                        h.Username(rabbitSettings.Username);
-                        h.Password(rabbitSettings.Password);
-                    });
-                }
+                    h.Username(rabbitSettings.Username);
+                    h.Password(rabbitSettings.Password);
+                });
 
                 // Configure resiliency and exponential backoff retry policy
                 cfg.UseMessageRetry(r => r.Exponential(

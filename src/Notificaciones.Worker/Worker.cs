@@ -22,7 +22,7 @@ public class Worker : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _logger.LogInformation("==================================================================");
-        _logger.LogInformation("   🚀 NAINDEV CLOUD NOTIFICATION MICROSERVICE (WORKER SERVICE)");
+        _logger.LogInformation("   NAINDEV CLOUD NOTIFICATION MICROSERVICE (WORKER SERVICE)");
         _logger.LogInformation("   Architecture: Clean Architecture + DDD + MassTransit (.NET 10)");
         _logger.LogInformation("   Broker Host: {Host} | Target Queue: {Queue}", _rabbitSettings.Host, _rabbitSettings.QueueName);
         _logger.LogInformation("   SMTP Relay: {SmtpHost}:{SmtpPort} | Failsafe Demo Mode: {DemoMode}", _notificationSettings.SmtpHost, _notificationSettings.SmtpPort, _notificationSettings.EnableDemoSimulationMode);

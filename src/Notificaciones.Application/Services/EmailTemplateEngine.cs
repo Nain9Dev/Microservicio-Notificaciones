@@ -140,7 +140,7 @@ public class EmailTemplateEngine
     {
         return $@"
 <h2 style=""color: #10B981; margin-top: 0; margin-bottom: 15px; font-size: 24px; font-weight: 700;"">
-    ¡Bienvenido/a al ecosistema de NainDev! 🚀
+    Bienvenido al ecosistema de NainDev
 </h2>
 <p style=""font-size: 16px; color: #E2E8F0; margin-bottom: 20px;"">
     Hola <strong>{(string.IsNullOrEmpty(ev.SenderName) ? "Dev" : ev.SenderName)}</strong>,
@@ -166,7 +166,7 @@ public class EmailTemplateEngine
     {
         return $@"
 <div style=""background-color: #7F1D1D20; border: 1px solid #EF4444; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center;"">
-    <strong style=""color: #FCA5A5; font-size: 16px;"">⚠️ ALERTA DE SISTEMA CLOUD</strong>
+    <strong style=""color: #FCA5A5; font-size: 16px;"">ALERTA DE SISTEMA CLOUD</strong>
 </div>
 <h3 style=""color: #FFFFFF; margin-top: 0; margin-bottom: 15px;"">{ev.Subject}</h3>
 <div style=""background-color: #0F172A; padding: 20px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 14px; color: #CBD5E1; border: 1px solid #334155; overflow-x: auto;"">
