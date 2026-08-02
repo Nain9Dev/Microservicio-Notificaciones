@@ -490,3 +490,6 @@ temp-data/
 
 # Environment secrets (CloudAMQP URLs, etc.)
 .env
+*.secret.*
+appsettings.*.json
+!appsettings.json

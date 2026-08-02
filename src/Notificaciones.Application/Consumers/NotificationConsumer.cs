@@ -1,5 +1,7 @@
+using System.Diagnostics;
 using MassTransit;
 using Microsoft.Extensions.Logging;
+using Notificaciones.Application.Services;
 using Notificaciones.Domain.Events;
 
 namespace Notificaciones.Application.Consumers;
@@ -7,20 +9,50 @@ namespace Notificaciones.Application.Consumers;
 public class NotificationConsumer : IConsumer<NotificationEvent>
 {
     private readonly ILogger<NotificationConsumer> _logger;
+    private readonly INotificationSender _sender;
+    private readonly EmailTemplateEngine _templateEngine;
 
-    public NotificationConsumer(ILogger<NotificationConsumer> logger)
+    public NotificationConsumer(
+        ILogger<NotificationConsumer> logger,
+        INotificationSender sender,
+        EmailTemplateEngine templateEngine)
     {
         _logger = logger;
+        _sender = sender;
+        _templateEngine = templateEngine;
     }
 
-    public Task Consume(ConsumeContext<NotificationEvent> context)
+    public async Task Consume(ConsumeContext<NotificationEvent> context)
     {
         var notification = context.Message;
+        var stopwatch = Stopwatch.StartNew();
 
-        // Simulating email dispatch
-        _logger.LogInformation("Processing email dispatch to: {Recipient}", notification.Recipient);
-        _logger.LogInformation("Subject: {Subject}", notification.Subject);
+        _logger.LogInformation(
+            "====> [CONSUMER START] Received {NotificationType} event [ID: {NotificationId}] for Recipient: {Recipient}",
+            notification.Type, notification.NotificationId, notification.Recipient);
 
-        return Task.CompletedTask;
+        try
+        {
+            // 1. Generate customized responsive HTML template
+            string htmlPayload = _templateEngine.GenerateHtmlTemplate(notification);
+
+            // 2. Dispatch notification via configured infrastructure provider
+            await _sender.SendAsync(notification, htmlPayload, context.CancellationToken);
+
+            stopwatch.Stop();
+            _logger.LogInformation(
+                "<==== [CONSUMER SUCCESS] Dispatched {NotificationType} [ID: {NotificationId}] in {ElapsedMilliseconds}ms.",
+                notification.Type, notification.NotificationId, stopwatch.ElapsedMilliseconds);
+        }
+        catch (Exception ex)
+        {
+            stopwatch.Stop();
+            _logger.LogError(ex,
+                "[CONSUMER FAILURE] Error dispatching notification [ID: {NotificationId}] after {ElapsedMilliseconds}ms. Error: {Message}",
+                notification.NotificationId, stopwatch.ElapsedMilliseconds, ex.Message);
+
+            // Rethrowing allows MassTransit retry policies / Dead-Letter Queue handling to engage
+            throw;
+        }
     }
-}
+}

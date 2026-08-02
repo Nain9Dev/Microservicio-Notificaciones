@@ -1,26 +1,11 @@
-using MassTransit;
-using Notificaciones.Application.Consumers;
+using Notificaciones.Infrastructure;
 using Notificaciones.Worker;
 
 var builder = Host.CreateApplicationBuilder(args);
 
-builder.Services.AddMassTransit(x =>
-{
-    x.AddConsumer<NotificationConsumer>();
-
-    x.UsingRabbitMq((context, cfg) =>
-    {
-        cfg.Host("localhost", "/", h => {
-            h.Username("guest");
-            h.Password("guest");
-        });
-
-        cfg.ReceiveEndpoint("email-queue", e =>
-        {
-            e.ConfigureConsumer<NotificationConsumer>(context);
-        });
-    });
-});
+// Register application & infrastructure services cleanly via Clean Architecture extensions
+builder.Services.AddMessagingInfrastructure(builder.Configuration);
+builder.Services.AddNotificationProviders(builder.Configuration);
 
 builder.Services.AddHostedService<Worker>();
 

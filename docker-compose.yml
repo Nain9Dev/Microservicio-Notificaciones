@@ -1,14 +1,60 @@
 version: '3.8'
 
 services:
-  rabbitmq:
+  rabbitmq-bus:
     image: rabbitmq:3-management-alpine
     container_name: rabbitmq-bus
+    hostname: rabbitmq
     ports:
-      - "5672:5672"   # Puerto de comunicación API
+      - "5672:5672"   # Puerto de comunicación API AMQP
       - "15672:15672" # Puerto para el panel de administración web
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - naindev-cloud
+
+  notificaciones-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: api
+    container_name: notificaciones-api
+    ports:
+      - "5000:5000"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - RabbitMq__Host=rabbitmq
+      - RabbitMq__Username=guest
+      - RabbitMq__Password=guest
+    depends_on:
+      - rabbitmq-bus
+    networks:
+      - naindev-cloud
+
+  notificaciones-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: worker
+    container_name: notificaciones-worker
+    environment:
+      - DOTNET_ENVIRONMENT=Production
+      - RabbitMq__Host=rabbitmq
+      - RabbitMq__Username=guest
+      - RabbitMq__Password=guest
+      - NotificationSettings__EnableDemoSimulationMode=true
+      - WebhookSettings__Enabled=false
+    depends_on:
+      - rabbitmq-bus
+    networks:
+      - naindev-cloud
 
 volumes:
   rabbitmq_data:
+
+networks:
+  naindev-cloud:
+    driver: bridge
