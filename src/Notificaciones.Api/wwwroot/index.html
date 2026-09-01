@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>NainDev · Cloud Notification Console</title>
+    <meta name="description" content="Consola en vivo del microservicio de notificaciones asíncronas de NainDev: .NET 10, Clean Architecture, RabbitMQ y MassTransit." />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2305070D'/%3E%3Cpath d='M9 23V9l14 14V9' stroke='%2338BDF8' stroke-width='2.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="assets/css/console.css" />
+</head>
+<body>
+
+    <div class="backdrop" aria-hidden="true">
+        <div class="aurora aurora-a"></div>
+        <div class="aurora aurora-b"></div>
+        <div class="aurora aurora-c"></div>
+        <div class="grid-veil"></div>
+        <div class="vignette"></div>
+    </div>
+
+    <header class="topbar">
+        <a class="wordmark" href="#top">
+            <svg class="wordmark-mark" viewBox="0 0 32 32" aria-hidden="true">
+                <rect width="32" height="32" rx="9" fill="url(#markGradient)" fill-opacity="0.16" />
+                <rect x="0.6" y="0.6" width="30.8" height="30.8" rx="8.4" fill="none" stroke="url(#markGradient)" stroke-opacity="0.5" />
+                <path d="M9 23V9l14 14V9" stroke="url(#markGradient)" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <defs>
+                    <linearGradient id="markGradient" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                        <stop stop-color="#38BDF8" />
+                        <stop offset="1" stop-color="#A78BFA" />
+                    </linearGradient>
+                </defs>
+            </svg>
+            <span class="wordmark-text">NAIN<span>DEV</span></span>
+            <span class="wordmark-sub">Cloud Notification Service</span>
+        </a>
+
+        <div class="topbar-actions">
+            <div class="status-pill" id="statusPill" role="status" aria-live="polite">
+                <span class="status-dot" data-state="connecting"></span>
+                <span class="status-label" id="statusLabel">Conectando</span>
+                <span class="status-meta" id="statusMeta">—</span>
+            </div>
+            <a class="ghost-button" href="swagger" target="_blank" rel="noopener">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/></svg>
+                OpenAPI
+            </a>
+            <a class="ghost-button" href="https://www.naindev.com" target="_blank" rel="noopener">
+                Portafolio
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3h7v7M13 3L5 11M11 13H3V5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+            </a>
+        </div>
+    </header>
+
+    <main id="top">
+
+        <section class="hero">
+            <div class="hero-copy">
+                <div class="eyebrow">
+                    <span class="eyebrow-dot"></span>
+                    .NET 10 · Clean Architecture · Event Driven
+                </div>
+                <h1>
+                    Notificaciones asíncronas<br />
+                    <span class="gradient-text">observables en tiempo real</span>
+                </h1>
+                <p class="lede">
+                    Gateway REST desacoplado, broker de mensajería y worker de procesamiento.
+                    Cada transición del pipeline se emite como evento de dominio y llega a esta
+                    consola por <strong>Server-Sent Events</strong>: lo que ves aquí abajo es
+                    telemetría real del microservicio, no una animación pregrabada.
+                </p>
+                <div class="hero-cta">
+                    <button class="primary-button" type="button" data-scroll-to="playground">
+                        Lanzar una notificación
+                        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+                    </button>
+                    <button class="secondary-button" type="button" data-scroll-to="pipeline">
+                        Ver el pipeline
+                    </button>
+                </div>
+            </div>
+
+            <div class="kpi-grid">
+                <article class="kpi-card" data-accent="cyan">
+                    <span class="kpi-label">Despachadas</span>
+                    <span class="kpi-value" id="kpiDispatched" data-metric="dispatched">0</span>
+                    <span class="kpi-foot"><span id="kpiInFlight">0</span> en vuelo</span>
+                    <div class="kpi-glow"></div>
+                </article>
+                <article class="kpi-card" data-accent="violet">
+                    <span class="kpi-label">Latencia p95</span>
+                    <span class="kpi-value" id="kpiLatency" data-metric="p95">0<small>ms</small></span>
+                    <span class="kpi-foot">media <span id="kpiAvgLatency">0</span> ms</span>
+                    <div class="kpi-glow"></div>
+                </article>
+                <article class="kpi-card" data-accent="emerald">
+                    <span class="kpi-label">Tasa de éxito</span>
+                    <span class="kpi-value" id="kpiSuccess" data-metric="success">100<small>%</small></span>
+                    <span class="kpi-foot"><span id="kpiFailed">0</span> fallos</span>
+                    <div class="kpi-glow"></div>
+                </article>
+                <article class="kpi-card" data-accent="amber">
+                    <span class="kpi-label">HTML generado</span>
+                    <span class="kpi-value" id="kpiBytes" data-metric="bytes">0<small>KB</small></span>
+                    <span class="kpi-foot">motor de plantillas</span>
+                    <div class="kpi-glow"></div>
+                </article>
+            </div>
+        </section>
+
+        <section class="panel pipeline-panel" id="pipeline">
+            <div class="panel-head">
+                <div>
+                    <h2>Pipeline en vivo</h2>
+                    <p>Cada etapa se ilumina cuando el microservicio emite su evento de ciclo de vida.</p>
+                </div>
+                <div class="legend" id="pipelineLegend">
+                    <span class="legend-item" data-stage="Accepted"><i></i>Accepted</span>
+                    <span class="legend-item" data-stage="Queued"><i></i>Queued</span>
+                    <span class="legend-item" data-stage="Received"><i></i>Received</span>
+                    <span class="legend-item" data-stage="Rendered"><i></i>Rendered</span>
+                    <span class="legend-item" data-stage="Dispatched"><i></i>Dispatched</span>
+                    <span class="legend-item" data-stage="Failed"><i></i>Failed</span>
+                </div>
+            </div>
+
+            <div class="pipeline" id="pipelineTrack">
+                <div class="node" data-node="client">
+                    <div class="node-icon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2" stroke="currentColor" stroke-width="1.7" fill="none"/><path d="M8 20h8M12 17v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+                    </div>
+                    <div class="node-name">Cliente HTTP</div>
+                    <div class="node-tech">naindev.com</div>
+                    <div class="node-counter" data-counter="client">0</div>
+                </div>
+
+                <div class="wire" data-wire="1"><span class="wire-line"></span></div>
+
+                <div class="node" data-node="gateway">
+                    <div class="node-icon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="8" cy="7" r="1.6" fill="currentColor"/><circle cx="14" cy="12" r="1.6" fill="currentColor"/><circle cx="10" cy="17" r="1.6" fill="currentColor"/></svg>
+                    </div>
+                    <div class="node-name">API Gateway</div>
+                    <div class="node-tech">ASP.NET Core</div>
+                    <div class="node-counter" data-counter="gateway">0</div>
+                </div>
+
+                <div class="wire" data-wire="2"><span class="wire-line"></span></div>
+
+                <div class="node" data-node="broker">
+                    <div class="node-icon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="9" width="5" height="6" rx="1.2" stroke="currentColor" stroke-width="1.6" fill="none"/><rect x="9.5" y="9" width="5" height="6" rx="1.2" stroke="currentColor" stroke-width="1.6" fill="none"/><rect x="16" y="9" width="5" height="6" rx="1.2" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>
+                    </div>
+                    <div class="node-name">Message Broker</div>
+                    <div class="node-tech" id="brokerTech">RabbitMQ</div>
+                    <div class="node-counter" data-counter="broker">0</div>
+                </div>
+
+                <div class="wire" data-wire="3"><span class="wire-line"></span></div>
+
+                <div class="node" data-node="worker">
+                    <div class="node-icon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l7.4 4.3v8.4L12 20.5 4.6 16.2V7.8z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/><circle cx="12" cy="12" r="2.6" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>
+                    </div>
+                    <div class="node-name">Worker</div>
+                    <div class="node-tech">Template Engine</div>
+                    <div class="node-counter" data-counter="worker">0</div>
+                </div>
+
+                <div class="wire" data-wire="4"><span class="wire-line"></span></div>
+
+                <div class="node" data-node="delivery">
+                    <div class="node-icon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5.5" width="18" height="13" rx="2" stroke="currentColor" stroke-width="1.7" fill="none"/><path d="M3.6 7l8.4 6 8.4-6" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <div class="node-name">Entrega</div>
+                    <div class="node-tech" id="deliveryTech">SMTP / Webhook</div>
+                    <div class="node-counter" data-counter="delivery">0</div>
+                </div>
+            </div>
+
+            <div class="pipeline-foot">
+                <div class="foot-metric">
+                    <span class="foot-label">Transporte</span>
+                    <span class="foot-value" id="footTransport">—</span>
+                </div>
+                <div class="foot-metric">
+                    <span class="foot-label">Consolas conectadas</span>
+                    <span class="foot-value" id="footListeners">—</span>
+                </div>
+                <div class="foot-metric">
+                    <span class="foot-label">Uptime del gateway</span>
+                    <span class="foot-value" id="footUptime">—</span>
+                </div>
+                <div class="foot-metric">
+                    <span class="foot-label">Mejor latencia</span>
+                    <span class="foot-value" id="footFastest">—</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="split" id="playground">
+            <div class="panel form-panel">
+                <div class="panel-head">
+                    <div>
+                        <h2>Playground</h2>
+                        <p>Publica un evento real en el broker o previsualiza la plantilla sin tocarlo.</p>
+                    </div>
+                </div>
+
+                <form id="dispatchForm" autocomplete="off" novalidate>
+                    <fieldset class="field-group">
+                        <legend>Tipo de evento</legend>
+                        <div class="segmented" role="radiogroup" aria-label="Tipo de evento">
+                            <label class="segment" data-accent="cyan">
+                                <input type="radio" name="eventType" value="ContactFormSubmission" checked />
+                                <span>Contacto</span>
+                            </label>
+                            <label class="segment" data-accent="emerald">
+                                <input type="radio" name="eventType" value="WelcomeMessage" />
+                                <span>Bienvenida</span>
+                            </label>
+                            <label class="segment" data-accent="rose">
+                                <input type="radio" name="eventType" value="SystemAlert" />
+                                <span>Alerta</span>
+                            </label>
+                            <label class="segment" data-accent="violet">
+                                <input type="radio" name="eventType" value="TestDemo" />
+                                <span>Genérico</span>
+                            </label>
+                        </div>
+                    </fieldset>
+
+                    <div class="field-row">
+                        <div class="field">
+                            <label for="senderName">Nombre del remitente</label>
+                            <input type="text" id="senderName" name="senderName" maxlength="100" value="Aitor Nain" />
+                        </div>
+                        <div class="field">
+                            <label for="priority">Prioridad</label>
+                            <div class="select-wrap">
+                                <select id="priority" name="priority">
+                                    <option value="High" selected>High</option>
+                                    <option value="Normal">Normal</option>
+                                    <option value="Low">Low</option>
+                                </select>
+                                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6.5L8 10l4-3.5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="targetRecipient">Destinatario</label>
+                        <input type="email" id="targetRecipient" name="targetRecipient" maxlength="254" value="evaluator@demo-test.com" />
+                        <span class="field-hint">
+                            Los destinatarios fuera de la lista permitida se redirigen al buzón interno de pruebas.
+                        </span>
+                    </div>
+
+                    <div class="field">
+                        <label for="subject">Asunto</label>
+                        <input type="text" id="subject" name="subject" maxlength="150" value="Demo: motor de notificaciones en vivo" />
+                    </div>
+
+                    <div class="field">
+                        <label for="content">Mensaje</label>
+                        <textarea id="content" name="content" rows="5" maxlength="5000">Prueba de despacho asíncrono a través del clúster de RabbitMQ. El worker renderiza la plantilla responsive y la entrega al proveedor configurado.</textarea>
+                        <span class="field-hint" id="contentCounter">0 / 5000</span>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="primary-button" id="dispatchButton">
+                            <span class="button-label">Enviar al pipeline</span>
+                            <span class="button-spinner" aria-hidden="true"></span>
+                        </button>
+                        <button type="button" class="secondary-button" id="burstButton">
+                            Ráfaga ×5
+                        </button>
+                    </div>
+
+                    <div class="form-feedback" id="formFeedback" role="status" aria-live="polite"></div>
+                </form>
+            </div>
+
+            <div class="panel preview-panel">
+                <div class="panel-head">
+                    <div>
+                        <h2>Previsualización</h2>
+                        <p>Render en servidor del correo, actualizado mientras escribes.</p>
+                    </div>
+                    <div class="tabs" role="tablist" aria-label="Formato de previsualización">
+                        <button type="button" class="tab is-active" role="tab" aria-selected="true" data-tab="html">HTML</button>
+                        <button type="button" class="tab" role="tab" aria-selected="false" data-tab="text">Texto</button>
+                    </div>
+                </div>
+
+                <div class="preview-stage">
+                    <div class="device">
+                        <div class="device-bar">
+                            <span class="device-dot"></span>
+                            <span class="device-dot"></span>
+                            <span class="device-dot"></span>
+                            <span class="device-title" id="previewSubject">—</span>
+                        </div>
+                        <div class="device-screen">
+                            <iframe id="previewFrame" title="Previsualización del correo" sandbox=""></iframe>
+                            <pre id="previewText" class="preview-text" hidden></pre>
+                            <div class="preview-loading" id="previewLoading" hidden>
+                                <span class="spinner"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="preview-foot">
+                    <span><b id="previewBytes">0</b> bytes</span>
+                    <span><b id="previewTime">0</b> ms de render</span>
+                    <span class="preview-engine">EmailTemplateEngine</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="split split-wide">
+            <div class="panel stream-panel">
+                <div class="panel-head">
+                    <div>
+                        <h2>Stream de eventos</h2>
+                        <p>Server-Sent Events desde <code>/api/v1/notifications/stream</code>.</p>
+                    </div>
+                    <button type="button" class="ghost-button" id="clearStream">Limpiar</button>
+                </div>
+
+                <div class="stream" id="eventStream" role="log" aria-live="polite" aria-relevant="additions">
+                    <div class="stream-empty" id="streamEmpty">
+                        Esperando actividad del pipeline. Lanza una notificación desde el playground.
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel metrics-panel">
+                <div class="panel-head">
+                    <div>
+                        <h2>Métricas</h2>
+                        <p>Ventana móvil de 60 segundos.</p>
+                    </div>
+                </div>
+
+                <div class="chart-block">
+                    <div class="chart-label">
+                        <span>Throughput</span>
+                        <span id="throughputPeak">pico 0/s</span>
+                    </div>
+                    <canvas id="throughputChart" height="90" aria-label="Gráfico de throughput por segundo"></canvas>
+                </div>
+
+                <div class="breakdown">
+                    <div class="breakdown-label">Distribución por tipo</div>
+                    <ul class="breakdown-list" id="typeBreakdown">
+                        <li class="breakdown-empty">Sin datos todavía</li>
+                    </ul>
+                </div>
+
+                <div class="breakdown">
+                    <div class="breakdown-label">Canal de entrega</div>
+                    <ul class="breakdown-list" id="channelBreakdown">
+                        <li class="breakdown-empty">Sin datos todavía</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel arch-panel">
+            <div class="panel-head">
+                <div>
+                    <h2>Cómo está construido</h2>
+                    <p>Cuatro proyectos, dependencias apuntando siempre hacia el dominio.</p>
+                </div>
+            </div>
+
+            <div class="arch-grid">
+                <article class="arch-card">
+                    <span class="arch-index">01</span>
+                    <h3>Domain</h3>
+                    <p>Eventos inmutables y enumeraciones. Sin dependencias externas: define el contrato que todos los demás respetan.</p>
+                    <code>NotificationEvent · NotificationLifecycleEvent</code>
+                </article>
+                <article class="arch-card">
+                    <span class="arch-index">02</span>
+                    <h3>Application</h3>
+                    <p>Consumidor, motor de plantillas y contrato de envío. Orquesta el caso de uso sin conocer el transporte ni el proveedor.</p>
+                    <code>NotificationConsumer · EmailTemplateEngine</code>
+                </article>
+                <article class="arch-card">
+                    <span class="arch-index">03</span>
+                    <h3>Infrastructure</h3>
+                    <p>Adaptadores concretos: MailKit sobre SMTP, webhooks y la configuración de MassTransit con reintentos exponenciales.</p>
+                    <code>SmtpEmailSender · DependencyInjection</code>
+                </article>
+                <article class="arch-card">
+                    <span class="arch-index">04</span>
+                    <h3>Api · Worker</h3>
+                    <p>Dos hosts sobre el mismo núcleo: el gateway publica y proyecta telemetría, el worker consume y entrega.</p>
+                    <code>Gateway REST · Background Service</code>
+                </article>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="footer">
+        <div class="footer-inner">
+            <span>NainDev Cloud Notification Service</span>
+            <span class="footer-sep">·</span>
+            <span>Clean Architecture · DDD · MassTransit</span>
+            <span class="footer-sep">·</span>
+            <a href="https://www.naindev.com" target="_blank" rel="noopener">www.naindev.com</a>
+        </div>
+    </footer>
+
+    <script src="assets/js/console.js" defer></script>
+</body>
+</html>

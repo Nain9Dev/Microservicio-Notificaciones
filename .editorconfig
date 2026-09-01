@@ -1,0 +1,19 @@
+root = true
+
+[*]
+end_of_line = lf
+insert_final_newline = true
+indent_style = space
+trim_trailing_whitespace = true
+
+# El compilador de C# asume el codepage del sistema cuando el fichero no lleva BOM,
+# lo que rompe los acentos de los mensajes en espanol. El BOM lo fuerza a UTF-8.
+[*.cs]
+charset = utf-8-bom
+indent_size = 4
+
+[*.{json,yml,yaml}]
+indent_size = 2
+
+[*.{html,css,js}]
+indent_size = 4

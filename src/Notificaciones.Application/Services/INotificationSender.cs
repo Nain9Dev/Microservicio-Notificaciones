@@ -8,11 +8,11 @@ namespace Notificaciones.Application.Services;
 public interface INotificationSender
 {
     /// <summary>
-    /// Dispatches the notification event formatted with the provided HTML body.
+    /// Dispatches the notification event using the pre-rendered multipart payload.
     /// </summary>
     /// <param name="notification">The immutable domain event.</param>
-    /// <param name="htmlBody">The pre-rendered HTML template body.</param>
+    /// <param name="rendered">The HTML and plain text representations produced by the template engine.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A task representing the asynchronous dispatch operation.</returns>
-    Task SendAsync(NotificationEvent notification, string htmlBody, CancellationToken cancellationToken = default);
+    /// <returns>The delivery outcome reported by the provider.</returns>
+    Task<NotificationDeliveryResult> SendAsync(NotificationEvent notification, RenderedNotification rendered, CancellationToken cancellationToken = default);
 }
